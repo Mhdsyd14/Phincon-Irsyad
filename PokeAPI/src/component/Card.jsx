@@ -15,7 +15,8 @@ const Card = ({ onData }) => {
   const fetchApi = async (offset = 0) => {
     try {
       const response = await axios.get(
-        `https://pokeapi.co/api/v2/pokemon?limit=${itemsPerPage}&offset=${offset}`
+        `http://localhost:3000/pokemon?limit=${itemsPerPage}&offset=${offset}
+`
       );
 
       const pokemonData = await Promise.all(
