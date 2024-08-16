@@ -10,13 +10,16 @@ const Card = ({ onData }) => {
   const [isLastPage, setIsLastPage] = useState(false);
   const [detailPokemon, setDetailPokemon] = useState(null);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null); // State untuk error
   const itemsPerPage = 6;
 
   const fetchApi = async (offset = 0) => {
+    setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(
-        `http://localhost:3000/pokemon?limit=${itemsPerPage}&offset=${offset}
-`
+        `http://localhost:3000/pokemon?limit=${itemsPerPage}&offset=${offset}`
       );
 
       const pokemonData = await Promise.all(
@@ -30,20 +33,32 @@ const Card = ({ onData }) => {
       setIsLastPage(response.data.results.length < itemsPerPage);
     } catch (error) {
       console.log(error);
+      setError("Gagal mengambil data dari API. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const detail = async (pokemonName) => {
     try {
-      const response = await axios.get(
-        `https://pokeapi.co/api/v2/pokemon/${pokemonName}`
-      );
+      if (selectedPokemon === pokemonName) {
+        clearDetail();
+      } else {
+        const response = await axios.get(
+          `https://pokeapi.co/api/v2/pokemon/${pokemonName}`
+        );
 
-      setDetailPokemon(response.data);
-      setSelectedPokemon(pokemonName);
+        setDetailPokemon(response.data);
+        setSelectedPokemon(pokemonName);
+      }
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const clearDetail = () => {
+    setDetailPokemon(null);
+    setSelectedPokemon(null);
   };
 
   useEffect(() => {
@@ -52,30 +67,37 @@ const Card = ({ onData }) => {
 
   const handleNext = () => {
     setCurrentPage((prevPage) => prevPage + 1);
+    clearDetail(); // Bersihkan detail saat pindah halaman
   };
 
   const handlePrevious = () => {
     if (currentPage > 0) {
       setCurrentPage((prevPage) => prevPage - 1);
+      clearDetail();
     }
   };
-
-  console.log(onData);
 
   const filteredPokemon = pokemon.filter((data) =>
     data.name.toLowerCase().includes(onData)
   );
-
-  console.log(filteredPokemon);
 
   return (
     <>
       <h1 className="text-center mt-3 text-2xl font-medium text-white font-mono">
         Pilih salah satu pokemon untuk detail
       </h1>
+      {/* Card */}
       <div className="flex flex-row">
         <div className="w-[940px] flex flex-wrap ml-5 mt-4">
-          {filteredPokemon.length > 0 ? (
+          {loading ? (
+            <div className="w-full text-center mt-4 text-white bg-blue-500 h-6">
+              Loading...
+            </div>
+          ) : error ? ( // Tampilkan pesan error jika terjadi error
+            <div className="w-full text-center mt-4 text-white bg-red-900 h-6">
+              {error}
+            </div>
+          ) : filteredPokemon.length > 0 ? (
             filteredPokemon.map((data, index) => (
               <div
                 className={`rounded-lg shadow-lg bg-white mt-6 w-72 p-4 ml-5 cursor-pointer ${
@@ -102,7 +124,7 @@ const Card = ({ onData }) => {
             </div>
           )}
         </div>
-
+        {/* Detail Pokemon */}
         {detailPokemon && (
           <div className="bg-white w-[320px] ml-5 mt-10 rounded-xl shadow-lg items-center">
             <h1 className="text-black text-center mt-4 font-bold text-3xl">
@@ -134,14 +156,20 @@ const Card = ({ onData }) => {
         )}
       </div>
 
-      <div className="mt-2 w-8/12 flex flex-row justify-end ml-8 mb-3">
+      <div className="mt-2 w-8/12 flex flex-row justify-end ml-8 mb-3 gap-3">
         {currentPage > 0 && (
-          <button className="text-4xl" onClick={handlePrevious}>
+          <button
+            className="text-4xl text-white bg-red-900"
+            onClick={handlePrevious}
+          >
             <GrFormPrevious />
           </button>
         )}
         {!isLastPage && (
-          <button className="text-4xl" onClick={handleNext}>
+          <button
+            className="text-4xl text-white bg-red-900"
+            onClick={handleNext}
+          >
             <GrFormNext />
           </button>
         )}
